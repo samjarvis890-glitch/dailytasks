@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Daily Expense Tracker</title>
+
+  <!-- 💅 Embedded CSS -->
+  <style>
+  
+  body {
+    font-family: "Poppins", sans-serif;
+    background: #f5f7fa;
+    padding: 10px;
+  }
+
+  h1 {
+    text-align: center;
+    color: #2c3e50;
+    font-size: 20px;
+    margin-bottom: 10px;
+  }
+
+  .container {
+    max-width: 260px; /* ⬅️ smaller width */
+    background: #fff;
+    margin: 20px auto;
+    padding: 15px; /* ⬅️ reduced padding */
+    border-radius: 8px;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  label {
+    font-size: 13px;
+  }
+
+  input, button {
+    width: 100%;
+    padding: 7px; /* ⬅️ smaller buttons and input */
+    margin: 6px 0;
+    font-size: 13px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+  }
+
+  button {
+    font-weight: bold;
+    cursor: pointer;
+    border: none;
+    transition: 0.3s;
+  }
+
+  button.save {
+    background-color: #0078d7;
+    color: white;
+  }
+
+  button.save:hover {
+    background-color: #005fa3;
+  }
+
+  button.clear {
+    background-color: #d9534f;
+    color: white;
+  }
+
+  button.clear:hover {
+    background-color: #b52b27;
+  }
+
+  .stats {
+    background: #f0f4ff;
+    padding: 8px; /* ⬅️ tighter stats box */
+    border-radius: 6px;
+    margin-top: 10px;
+    font-size: 13px;
+  }
+
+  .alert {
+    color: red;
+    font-weight: bold;
+    font-size: 13px;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 8px;
+    font-size: 12px;
+  }
+
+  th, td {
+    padding: 6px; /* ⬅️ smaller rows */
+    border-bottom: 1px solid #ddd;
+    text-align: center;
+  }
+
+  th {
+    background-color: #eaf0ff;
+  }
+
+  footer {
+    text-align: center;
+    margin-top: 15px;
+    color: #666;
+    font-size: 11px;
+  }
+</style>
+
+
+</head>
+
+<body>
+  <h1>💰 Daily Expense Tracker</h1>
+
+  <div class="container">
+    <label for="amount">Enter today's expense (₹):</label>
+    <input type="number" id="amount" placeholder="Enter amount" />
+
+    
+    <button class="save" onclick="saveExpense()">💾 Save Expense</button>
+    <button class="clear" onclick="clearAll()">🗑️ Clear Expenses</button>
+
+    
+    <div class="stats">
+      <p id="total">Total Expense: ₹0</p>
+      <p id="average">Average Daily Expense: ₹0</p>
+      <p id="today">Today's Expense: ₹0</p>
+      <p id="alertMsg"></p>
+    </div>
+
+ 
+    <h3>📅 Expense History</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Amount (₹)</th>
+        </tr>
+      </thead>
+      <tbody id="historyTable"></tbody>
+    </table>
+  </div>
+
+  
+
+  <script>
+    
+    let expenses = JSON.parse(localStorage.getItem("expenses")) || [];
+
+    
+    function saveExpense() {
+      const amount = parseFloat(document.getElementById("amount").value);
+      const today = new Date().toISOString().split("T")[0];
+
+      if (isNaN(amount) || amount <= 0) {
+        alert("Please enter a valid amount!");
+        return;
+      }
+
+     
+      expenses.push({ date: today, amount });
+
+      
+      localStorage.setItem("expenses", JSON.stringify(expenses));
+
+     
+      document.getElementById("amount").value = "";
+
+     
+      calculateStats();
+    }
+
+    
+    function calculateStats() {
+      if (expenses.length === 0) {
+        document.getElementById("total").innerText = "Total Expense: ₹0";
+        document.getElementById("average").innerText = "Average Daily Expense: ₹0";
+        document.getElementById("today").innerText = "Today's Expense: ₹0";
+        document.getElementById("alertMsg").innerHTML = "";
+        document.getElementById("historyTable").innerHTML = "";
+        return;
+      }
+
+      const total = expenses.reduce((sum, e) => sum + e.amount, 0);
+      const avg = total / expenses.length;
+      const today = new Date().toISOString().split("T")[0];
+
+      
+      const todayExpense = expenses
+        .filter(e => e.date === today)
+        .reduce((sum, e) => sum + e.amount, 0);
+
+
+      document.getElementById("total").innerText = `Total Expense: ₹${total.toFixed(2)}`;
+      document.getElementById("average").innerText = `Average Daily Expense: ₹${avg.toFixed(2)}`;
+      document.getElementById("today").innerText = `Today's Expense: ₹${todayExpense.toFixed(2)}`;
+
+      const alertMsg = document.getElementById("alertMsg");
+      if (avg > 0 && todayExpense > 2 * avg) {
+        alertMsg.innerHTML = "⚠️ Unusual spending detected today!";
+        alertMsg.className = "alert";
+      } else {
+        alertMsg.innerHTML = "✅ Spending is within normal range.";
+        alertMsg.className = "";
+      }
+
+      updateTable();
+    }
+
+    
+    function updateTable() {
+      const table = document.getElementById("historyTable");
+      table.innerHTML = "";
+
+      const sorted = [...expenses].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+      sorted.forEach(exp => {
+        const row = `<tr><td>${exp.date}</td><td>₹${exp.amount.toFixed(2)}</td></tr>`;
+        table.innerHTML += row;
+      });
+    }
+
+    
+    function clearAll() {
+      if (confirm("Are you sure you want to clear all expenses?")) {
+        localStorage.removeItem("expenses");
+        expenses = [];
+        calculateStats();
+        alert("✅ All expenses cleared!");
+      }
+    }
+
+    
+    calculateStats();
+  </script>
+</body>
+</html>
